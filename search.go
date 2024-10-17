@@ -1,5 +1,9 @@
 package quickwitgosdk
 
+type SearchSettings struct {
+	DefaultSearchFields []string `json:"default_search_fields"`
+}
+
 type SearchRequest struct {
 	Query          string   `json:"query"`
 	SearchFields   []string `json:"search_field,omitempty"`
