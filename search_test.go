@@ -29,15 +29,16 @@ func TestSearch(t *testing.T) {
 			t.Errorf("expected default_operator 'AND', got %q", req.DefaultOperator)
 		}
 
+		// Return flat document fields as Quickwit does
 		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(SearchResponse{
-			NumHits:           2,
-			ElapsedTimeMicros: 1500,
-			Hits: []Hit{
-				{JSON: map[string]interface{}{"title": "doc1"}},
-				{JSON: map[string]interface{}{"title": "doc2"}},
-			},
-		})
+		w.Write([]byte(`{
+			"num_hits": 2,
+			"elapsed_time_micros": 1500,
+			"hits": [
+				{"title": "doc1", "body": "first doc"},
+				{"title": "doc2", "body": "second doc"}
+			]
+		}`))
 	}))
 	defer ts.Close()
 
@@ -54,6 +55,12 @@ func TestSearch(t *testing.T) {
 	}
 	if len(resp.Hits) != 2 {
 		t.Errorf("expected 2 hits, got %d", len(resp.Hits))
+	}
+	if resp.Hits[0].Fields["title"] != "doc1" {
+		t.Errorf("expected title 'doc1', got %v", resp.Hits[0].Fields["title"])
+	}
+	if resp.Hits[1].Fields["body"] != "second doc" {
+		t.Errorf("expected body 'second doc', got %v", resp.Hits[1].Fields["body"])
 	}
 }
 
@@ -92,11 +99,8 @@ func TestSearchStreamCallback(t *testing.T) {
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/x-ndjson")
 
-		r1 := SearchResponse{NumHits: 1, Hits: []Hit{{JSON: map[string]string{"id": "1"}}}}
-		r2 := SearchResponse{NumHits: 2, Hits: []Hit{{JSON: map[string]string{"id": "2"}}}}
-
-		json.NewEncoder(w).Encode(r1)
-		json.NewEncoder(w).Encode(r2)
+		w.Write([]byte(`{"num_hits":1,"hits":[{"id":"1"}]}` + "\n"))
+		w.Write([]byte(`{"num_hits":2,"hits":[{"id":"2"},{"id":"3"}]}` + "\n"))
 	}))
 	defer ts.Close()
 
@@ -117,6 +121,9 @@ func TestSearchStreamCallback(t *testing.T) {
 	}
 	if results[0].NumHits != 1 || results[1].NumHits != 2 {
 		t.Error("unexpected num_hits in stream responses")
+	}
+	if results[0].Hits[0].Fields["id"] != "1" {
+		t.Errorf("expected id '1', got %v", results[0].Hits[0].Fields["id"])
 	}
 }
 
