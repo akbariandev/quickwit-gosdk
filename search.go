@@ -3,9 +3,9 @@ package quickwitgosdk
 // SearchRequest is the request body for the Quickwit search API.
 type SearchRequest struct {
 	Query               string                 `json:"query"`
-	DefaultOperator     string                 `json:"default_operator,omitempty"`     // "AND" or "OR"
+	DefaultOperator     string                 `json:"default_operator,omitempty"` // "AND" or "OR"
 	SearchFields        []string               `json:"search_field,omitempty"`
-	StartTimestamp      *int64                 `json:"start_timestamp,omitempty"`       // use pointer to distinguish zero value
+	StartTimestamp      *int64                 `json:"start_timestamp,omitempty"` // use pointer to distinguish zero value
 	EndTimestamp        *int64                 `json:"end_timestamp,omitempty"`
 	MaxHits             uint64                 `json:"max_hits,omitempty"`
 	StartOffset         uint64                 `json:"start_offset,omitempty"`
@@ -14,7 +14,7 @@ type SearchRequest struct {
 	Aggregations        map[string]interface{} `json:"aggregations,omitempty"`
 	Source              string                 `json:"_source,omitempty"`
 	SnippetFields       *SnippetRequest        `json:"snippet_fields,omitempty"`
-	HighlightFields     *HighlightRequest       `json:"highlight_fields,omitempty"`
+	HighlightFields     *HighlightRequest      `json:"highlight_fields,omitempty"`
 	TagFilters          []string               `json:"tag_filters,omitempty"`
 	Filter              string                 `json:"filter,omitempty"`
 }
