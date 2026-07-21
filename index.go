@@ -5,6 +5,26 @@ import (
 	"time"
 )
 
+// Timestamp is a custom type that can unmarshal from both numeric (Unix seconds)
+// and RFC3339 string timestamps returned by the Quickwit API.
+type Timestamp struct {
+	time.Time
+}
+
+func (t *Timestamp) UnmarshalJSON(data []byte) error {
+	// Try numeric first (e.g. 1704067200)
+	var num float64
+	if err := json.Unmarshal(data, &num); err == nil {
+		secs := int64(num)
+		nanos := int64((num - float64(secs)) * 1e9)
+		t.Time = time.Unix(secs, nanos).UTC()
+		return nil
+	}
+
+	// Fall back to RFC3339 string
+	return json.Unmarshal(data, &t.Time)
+}
+
 // IndexMetadata represents metadata about a Quickwit index.
 type IndexMetadata struct {
 	IndexID         string            `json:"index_id"`
@@ -14,7 +34,7 @@ type IndexMetadata struct {
 	IndexingSettings json.RawMessage  `json:"indexing_settings,omitempty"`
 	SearchSettings  json.RawMessage   `json:"search_settings,omitempty"`
 	Retention       json.RawMessage   `json:"retention,omitempty"`
-	CreateTimestamp  time.Time         `json:"create_timestamp,omitempty"`
+	CreateTimestamp  Timestamp         `json:"create_timestamp,omitempty"`
 	Source          json.RawMessage   `json:"source,omitempty"`
 }
 

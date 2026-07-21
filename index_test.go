@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
+	"time"
 )
 
 func TestListIndexes(t *testing.T) {
@@ -66,6 +67,32 @@ func TestCreateIndex(t *testing.T) {
 	}
 	if index.IndexID != "new-index" {
 		t.Errorf("expected index_id 'new-index', got %q", index.IndexID)
+	}
+}
+
+func TestTimestampUnmarshalNumeric(t *testing.T) {
+	// Quickwit often returns timestamps as numeric Unix seconds.
+	data := []byte(`{"create_timestamp": 1704067200}`)
+	var m IndexMetadata
+	if err := json.Unmarshal(data, &m); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	expected := time.Unix(1704067200, 0).UTC()
+	if !m.CreateTimestamp.Time.Equal(expected) {
+		t.Errorf("expected %v, got %v", expected, m.CreateTimestamp.Time)
+	}
+}
+
+func TestTimestampUnmarshalString(t *testing.T) {
+	// Some Quickwit versions may return RFC3339 strings.
+	data := []byte(`{"create_timestamp": "2024-01-01T00:00:00Z"}`)
+	var m IndexMetadata
+	if err := json.Unmarshal(data, &m); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	expected := time.Date(2024, 1, 1, 0, 0, 0, 0, time.UTC)
+	if !m.CreateTimestamp.Time.Equal(expected) {
+		t.Errorf("expected %v, got %v", expected, m.CreateTimestamp.Time)
 	}
 }
 
