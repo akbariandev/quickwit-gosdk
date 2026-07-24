@@ -2,6 +2,27 @@ package quickwitgosdk
 
 import "encoding/json"
 
+// OutputFormat represents the format of a search response (json or pretty_json).
+type OutputFormat string
+
+const (
+	// FormatJSON returns compact JSON output.
+	FormatJSON OutputFormat = "json"
+	// FormatPrettyJSON returns human-readable, indented JSON output.
+	FormatPrettyJSON OutputFormat = "pretty_json"
+)
+
+// StreamOutputFormat represents the output format of a search stream response
+// (csv or click_house_row_binary).
+type StreamOutputFormat string
+
+const (
+	// StreamFormatCSV returns CSV output.
+	StreamFormatCSV StreamOutputFormat = "csv"
+	// StreamFormatClickHouseRowBinary returns ClickHouse Row Binary output.
+	StreamFormatClickHouseRowBinary StreamOutputFormat = "click_house_row_binary"
+)
+
 // SortByField defines a sort by a numeric field.
 type SortByField struct {
 	FieldName     string `json:"field_name"`

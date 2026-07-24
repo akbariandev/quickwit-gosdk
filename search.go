@@ -17,7 +17,7 @@ type SearchRequest struct {
 	HighlightFields     *HighlightRequest      `json:"highlight_fields,omitempty"`
 	TagFilters          []string               `json:"tag_filters,omitempty"`
 	Filter              string                 `json:"filter,omitempty"`
-	Format              string                 `json:"format,omitempty"` // "json" or "pretty_json"
+	Format              OutputFormat           `json:"format,omitempty"` // "json" or "pretty_json"
 }
 
 // SearchResponse is the response body for the Quickwit search API.
