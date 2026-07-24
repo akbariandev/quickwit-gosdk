@@ -11,12 +11,13 @@ type SearchRequest struct {
 	StartOffset         uint64                 `json:"start_offset,omitempty"`
 	SortByField         *SortByField           `json:"sort_by_field,omitempty"`
 	SortByFieldDocOrder *SortByFieldDocOrder   `json:"sort_by_field_doc_order,omitempty"`
-	Aggregations        map[string]interface{} `json:"aggregations,omitempty"`
+	Aggregations        map[string]interface{} `json:"aggs,omitempty"`
 	Source              string                 `json:"_source,omitempty"`
 	SnippetFields       *SnippetRequest        `json:"snippet_fields,omitempty"`
 	HighlightFields     *HighlightRequest      `json:"highlight_fields,omitempty"`
 	TagFilters          []string               `json:"tag_filters,omitempty"`
 	Filter              string                 `json:"filter,omitempty"`
+	Format              OutputFormat           `json:"format,omitempty"` // "json" or "pretty_json"
 }
 
 // SearchResponse is the response body for the Quickwit search API.

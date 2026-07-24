@@ -15,8 +15,8 @@ import (
 // SearchStreamRequest is the request body for the Quickwit search stream API.
 type SearchStreamRequest struct {
 	SearchRequest
-	FastField    string `json:"fast_field,omitempty"`
-	OutputFormat string `json:"output_format,omitempty"` // "csv" or "click_house_row_binary"
+	FastField    string            `json:"fast_field,omitempty"`
+	OutputFormat StreamOutputFormat `json:"output_format,omitempty"` // "csv" or "click_house_row_binary"
 }
 
 // SearchStream performs a streaming search and returns a channel of SearchResponse.
