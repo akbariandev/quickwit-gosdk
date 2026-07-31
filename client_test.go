@@ -10,16 +10,12 @@ import (
 
 func TestNewClientWithOptions(t *testing.T) {
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if auth := r.Header.Get("Authorization"); auth != "Bearer test-api-key" {
-			t.Errorf("expected Authorization header 'Bearer test-api-key', got %q", auth)
-		}
 		w.Header().Set("Content-Type", "application/json")
 		json.NewEncoder(w).Encode(SearchResponse{NumHits: 0})
 	}))
 	defer ts.Close()
 
 	client := NewClient(ts.URL,
-		WithAPIKey("test-api-key"),
 		WithTimeout(30*time.Second),
 	)
 

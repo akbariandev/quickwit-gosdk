@@ -10,13 +10,6 @@ import (
 // ClientOption is a functional option for configuring the Quickwit client.
 type ClientOption func(*Client)
 
-// WithAPIKey sets the API key used for Bearer token authentication.
-func WithAPIKey(apiKey string) ClientOption {
-	return func(c *Client) {
-		c.client.SetAuthToken(apiKey)
-	}
-}
-
 // WithTimeout sets the HTTP request timeout.
 func WithTimeout(timeout time.Duration) ClientOption {
 	return func(c *Client) {
