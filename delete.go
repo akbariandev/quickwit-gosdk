@@ -19,11 +19,11 @@ type DeleteQueryResponse struct {
 
 // DeleteTaskResponse is the response returned when querying the status of a delete task.
 type DeleteTaskResponse struct {
-	TaskID    string     `json:"task_id"`
-	Status    string     `json:"status"`     // "running", "success", "error", "cancelled"
-	CreatedAt time.Time  `json:"created_at"`
-	UpdatedAt time.Time  `json:"updated_at"`
-	Error     string     `json:"error,omitempty"`
+	TaskID    string    `json:"task_id"`
+	Status    string    `json:"status"` // "running", "success", "error", "cancelled"
+	CreatedAt time.Time `json:"created_at"`
+	UpdatedAt time.Time `json:"updated_at"`
+	Error     string    `json:"error,omitempty"`
 }
 
 // DeleteByQuery submits a delete-by-query task for the given index.

@@ -27,26 +27,26 @@ func (t *Timestamp) UnmarshalJSON(data []byte) error {
 
 // IndexMetadata represents metadata about a Quickwit index.
 type IndexMetadata struct {
-	IndexID         string            `json:"index_id"`
-	URI             string            `json:"index_uri,omitempty"`
-	Version         string            `json:"version,omitempty"`
-	DocMapping      json.RawMessage   `json:"doc_mapping,omitempty"`
-	IndexingSettings json.RawMessage  `json:"indexing_settings,omitempty"`
-	SearchSettings  json.RawMessage   `json:"search_settings,omitempty"`
-	Retention       json.RawMessage   `json:"retention,omitempty"`
-	CreateTimestamp  Timestamp         `json:"create_timestamp,omitempty"`
-	Source          json.RawMessage   `json:"source,omitempty"`
+	IndexID          string          `json:"index_id"`
+	URI              string          `json:"index_uri,omitempty"`
+	Version          string          `json:"version,omitempty"`
+	DocMapping       json.RawMessage `json:"doc_mapping,omitempty"`
+	IndexingSettings json.RawMessage `json:"indexing_settings,omitempty"`
+	SearchSettings   json.RawMessage `json:"search_settings,omitempty"`
+	Retention        json.RawMessage `json:"retention,omitempty"`
+	CreateTimestamp  Timestamp       `json:"create_timestamp,omitempty"`
+	Source           json.RawMessage `json:"source,omitempty"`
 }
 
 // CreateIndexRequest is the request body for creating a new index.
 type CreateIndexRequest struct {
-	IndexID         string          `json:"index_id"`
-	DocMapping      json.RawMessage `json:"doc_mapping,omitempty"`
+	IndexID          string          `json:"index_id"`
+	DocMapping       json.RawMessage `json:"doc_mapping,omitempty"`
 	IndexingSettings json.RawMessage `json:"indexing_settings,omitempty"`
-	SearchSettings  json.RawMessage `json:"search_settings,omitempty"`
-	Retention       json.RawMessage `json:"retention,omitempty"`
-	Source          json.RawMessage `json:"source,omitempty"`
-	Overrides       json.RawMessage `json:"overrides,omitempty"`
+	SearchSettings   json.RawMessage `json:"search_settings,omitempty"`
+	Retention        json.RawMessage `json:"retention,omitempty"`
+	Source           json.RawMessage `json:"source,omitempty"`
+	Overrides        json.RawMessage `json:"overrides,omitempty"`
 }
 
 // DeleteIndexResponse is the response returned after deleting an index.

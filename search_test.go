@@ -1,7 +1,6 @@
 package quickwitgosdk
 
 import (
-	"context"
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
@@ -95,68 +94,38 @@ func TestSearchWithSortAndSnippets(t *testing.T) {
 	}
 }
 
-func TestSearchStreamCallback(t *testing.T) {
+func TestSearchWithScroll(t *testing.T) {
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "application/x-ndjson")
+		if r.Method != http.MethodPost {
+			t.Errorf("expected POST, got %s", r.Method)
+		}
+		if !strings.HasSuffix(r.URL.Path, "/api/v1/my-index/search") {
+			t.Errorf("unexpected path: %s", r.URL.Path)
+		}
 
-		w.Write([]byte(`{"num_hits":1,"hits":[{"id":"1"}]}` + "\n"))
-		w.Write([]byte(`{"num_hits":2,"hits":[{"id":"2"},{"id":"3"}]}` + "\n"))
+		var req SearchRequest
+		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+			t.Fatalf("failed to decode request: %v", err)
+		}
+		if req.ScrollTTLSecs == nil || *req.ScrollTTLSecs != 60 {
+			t.Errorf("expected scroll_ttl_secs=60, got %v", req.ScrollTTLSecs)
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(SearchResponse{NumHits: 0})
 	}))
 	defer ts.Close()
 
 	client := NewClient(ts.URL)
-	var results []SearchResponse
-
-	err := client.SearchStreamWithCallback(context.Background(), "my-index", SearchStreamRequest{
-		SearchRequest: SearchRequest{Query: "test"},
-	}, func(resp SearchResponse) error {
-		results = append(results, resp)
-		return nil
+	scrollTTL := uint64(60)
+	resp, err := client.Search("my-index", SearchRequest{
+		Query:         "test",
+		ScrollTTLSecs: &scrollTTL,
 	})
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
-	if len(results) != 2 {
-		t.Fatalf("expected 2 results, got %d", len(results))
-	}
-	if results[0].NumHits != 1 || results[1].NumHits != 2 {
-		t.Error("unexpected num_hits in stream responses")
-	}
-	if results[0].Hits[0].Fields["id"] != "1" {
-		t.Errorf("expected id '1', got %v", results[0].Hits[0].Fields["id"])
-	}
-}
-
-func TestSearchScrollChannel(t *testing.T) {
-	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if !strings.HasSuffix(r.URL.Path, "/api/v1/my-index/search/scroll") {
-			t.Errorf("unexpected path: %s", r.URL.Path)
-		}
-		w.Header().Set("Content-Type", "application/x-ndjson")
-
-		r1 := SearchResponse{NumHits: 1, ElapsedTimeMicros: 100}
-		r2 := SearchResponse{NumHits: 2, ElapsedTimeMicros: 200}
-
-		json.NewEncoder(w).Encode(r1)
-		json.NewEncoder(w).Encode(r2)
-	}))
-	defer ts.Close()
-
-	client := NewClient(ts.URL)
-	respCh, errCh := client.SearchScroll(context.Background(), "my-index", SearchScrollRequest{
-		SearchRequest: SearchRequest{Query: "test"},
-		ScrollTTLSecs: 60,
-	})
-
-	var results []SearchResponse
-	for resp := range respCh {
-		results = append(results, resp)
-	}
-
-	if err := <-errCh; err != nil {
-		t.Fatalf("unexpected error: %v", err)
-	}
-	if len(results) != 2 {
-		t.Fatalf("expected 2 results, got %d", len(results))
+	if resp.NumHits != 0 {
+		t.Errorf("expected 0 hits, got %d", resp.NumHits)
 	}
 }

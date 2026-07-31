@@ -8,9 +8,9 @@ import (
 
 // IngestResponse is the response returned after ingesting documents.
 type IngestResponse struct {
-	NumPersisted uint64              `json:"num_persisted"`
-	NumFailed    uint64              `json:"num_failed,omitempty"`
-	Errors       []IngestBatchError  `json:"errors,omitempty"`
+	NumPersisted uint64             `json:"num_persisted"`
+	NumFailed    uint64             `json:"num_failed,omitempty"`
+	Errors       []IngestBatchError `json:"errors,omitempty"`
 }
 
 // IngestBatchError represents an error for a single document in a batch.
