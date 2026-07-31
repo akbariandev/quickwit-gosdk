@@ -10,13 +10,15 @@ go get github.com/akbariandev/quickwit-gosdk
 
 ## Features
 
-- [x] Search
-- [x] Search Stream
-- [x] Scroll Search
+- [x] Search (with scroll support)
 - [x] Delete Query
 - [x] Index CRUD operations
 - [x] Ingest API
 - [x] Delete Tasks API
+
+> **Note:** Quickwit removed the `/search/stream` and `/search/scroll` endpoints
+> in v0.9 (PR #5886). Scroll is now a field (`scroll_ttl_secs`) on the regular
+> search request. For large result sets, paginate using `start_offset`/`max_hits`.
 
 ## Usage
 
@@ -53,56 +55,52 @@ resp, err := client.Search("my-index", quickwitgosdk.SearchRequest{
     SnippetFields:   &quickwitgosdk.SnippetRequest{FieldName: "message", MaxNumCharsPerFragment: 200},
     TagFilters:      []string{"tag1:value1", "tag2:value2"},
     Filter:          "status_code >= 400",
+    Format:          quickwitgosdk.FormatPrettyJSON,
 })
 
 fmt.Printf("Found %d hits\n", resp.NumHits)
 for _, hit := range resp.Hits {
-    fmt.Printf("  %v\n", hit.JSON)
+    fmt.Printf("  %v\n", hit.Fields)
 }
-```
-
-### Search Stream (Channel-based)
-
-```go
-ctx := context.Background()
-respCh, errCh := client.SearchStream(ctx, "my-index", quickwitgosdk.SearchStreamRequest{
-    SearchRequest: quickwitgosdk.SearchRequest{Query: "streaming"},
-    FastField:     "timestamp",
-})
-
-for resp := range respCh {
-    fmt.Printf("Batch: %d hits\n", resp.NumHits)
-}
-if err := <-errCh; err != nil {
-    log.Fatal(err)
-}
-```
-
-### Search Stream (Callback-based)
-
-```go
-err := client.SearchStreamWithCallback(ctx, "my-index", quickwitgosdk.SearchStreamRequest{
-    SearchRequest: quickwitgosdk.SearchRequest{Query: "streaming"},
-}, func(resp quickwitgosdk.SearchResponse) error {
-    fmt.Printf("Batch: %d hits\n", resp.NumHits)
-    return nil
-})
 ```
 
 ### Scroll Search
 
-```go
-// Channel-based
-respCh, errCh := client.SearchScroll(ctx, "my-index", quickwitgosdk.SearchScrollRequest{
-    SearchRequest: quickwitgosdk.SearchRequest{Query: "all logs"},
-    ScrollTTLSecs: 60,
-})
+Scroll is enabled by setting `ScrollTTLSecs` on a regular search request:
 
-// Callback-based
-err := client.SearchScrollWithCallback(ctx, "my-index", req, func(resp quickwitgosdk.SearchResponse) error {
-    fmt.Printf("Batch: %d hits\n", resp.NumHits)
-    return nil
+```go
+scrollTTL := uint64(60) // seconds
+resp, err := client.Search("my-index", quickwitgosdk.SearchRequest{
+    Query:         "all logs",
+    MaxHits:       1000,
+    ScrollTTLSecs: &scrollTTL,
 })
+```
+
+### Paginating Large Result Sets
+
+Since the stream endpoint was removed, paginate using `start_offset`/`max_hits`:
+
+```go
+const pageSize = 100
+offset := uint64(0)
+for {
+    resp, err := client.Search("my-index", quickwitgosdk.SearchRequest{
+        Query:       "body:error",
+        MaxHits:     pageSize,
+        StartOffset: offset,
+    })
+    if err != nil {
+        log.Fatal(err)
+    }
+    for _, hit := range resp.Hits {
+        fmt.Printf("  %v\n", hit.Fields)
+    }
+    if len(resp.Hits) < pageSize {
+        break // no more results
+    }
+    offset += pageSize
+}
 ```
 
 ### Ingest
