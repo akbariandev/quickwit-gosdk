@@ -27,12 +27,12 @@ func (t *Timestamp) UnmarshalJSON(data []byte) error {
 
 // IndexMetadata represents the top-level metadata for a Quickwit index.
 type IndexMetadata struct {
-	Version         string                          `json:"version"`
-	IndexUID        string                          `json:"index_uid"`
-	IndexConfig     IndexConfig                     `json:"index_config"`
+	Version         string                            `json:"version"`
+	IndexUID        string                            `json:"index_uid"`
+	IndexConfig     IndexConfig                       `json:"index_config"`
 	Checkpoint      map[string]map[string]interface{} `json:"checkpoint,omitempty"`
-	CreateTimestamp Timestamp                       `json:"create_timestamp,omitempty"`
-	Sources         []Source                        `json:"sources,omitempty"`
+	CreateTimestamp Timestamp                         `json:"create_timestamp,omitempty"`
+	Sources         []Source                          `json:"sources,omitempty"`
 }
 
 // IndexConfig represents the configuration of a Quickwit index.
@@ -62,7 +62,11 @@ type CreateIndexRequest struct {
 
 // DeleteIndexResponse is the response returned after deleting an index.
 type DeleteIndexResponse struct {
-	IndexID string `json:"index_id"`
+	SplitID                   string `json:"split_id"`
+	NumDocs                   int    `json:"num_docs"`
+	UncompressedDocsSizeBytes int64  `json:"uncompressed_docs_size_bytes"`
+	FileName                  string `json:"file_name"`
+	FileSizeBytes             int64  `json:"file_size_bytes"`
 }
 
 // CreateIndex creates a new Quickwit index.
@@ -98,8 +102,8 @@ func (c *Client) ListIndexes() ([]IndexMetadata, error) {
 }
 
 // DeleteIndex deletes an index. If dryRun is true, the deletion is only simulated.
-func (c *Client) DeleteIndex(indexId string, dryRun bool) (DeleteIndexResponse, error) {
-	var resp DeleteIndexResponse
+func (c *Client) DeleteIndex(indexId string, dryRun bool) ([]DeleteIndexResponse, error) {
+	var resp []DeleteIndexResponse
 	_, err := c.client.R().
 		SetPathParam("indexId", indexId).
 		SetQueryParam("dry_run", boolToString(dryRun)).

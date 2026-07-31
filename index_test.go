@@ -110,7 +110,7 @@ func TestTimestampUnmarshalString(t *testing.T) {
 func TestDeleteIndex(t *testing.T) {
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(DeleteIndexResponse{IndexID: "old-index"})
+		json.NewEncoder(w).Encode([]DeleteIndexResponse{})
 	}))
 	defer ts.Close()
 
@@ -119,7 +119,8 @@ func TestDeleteIndex(t *testing.T) {
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
-	if resp.IndexID != "old-index" {
-		t.Errorf("expected index_id 'old-index', got %q", resp.IndexID)
+
+	if len(resp) != 0 {
+		t.Errorf("expected 0 'old-index', got %d", len(resp))
 	}
 }
