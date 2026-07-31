@@ -125,8 +125,41 @@ err = client.ForceMerge("my-index")
 ### Index CRUD
 
 ```go
-// Create
-index, err := client.CreateIndex(quickwitgosdk.CreateIndexRequest{IndexID: "my-index"})
+// Create — version, index_id, and doc_mapping are required.
+index, err := client.CreateIndex(quickwitgosdk.CreateIndexRequest{
+    Version: "0.9",
+    IndexID: "my-index",
+    DocMapping: json.RawMessage(`{
+        "mode": "lenient",
+        "field_mappings": [
+            {"name": "title",   "type": "text",   "stored": true, "indexed": true},
+            {"name": "body",    "type": "text",   "stored": true, "indexed": true},
+            {"name": "ts",      "type": "datetime","stored": true, "indexed": true, "fast": true}
+        ],
+        "tag_fields": [],
+        "timestamp_field": "ts",
+        "store_source": true
+    }`),
+    // Optional fields below — omitted when empty:
+    IndexURI: "", // custom index storage URI
+    IndexingSettings: json.RawMessage(`{
+        "commit_timeout_secs": 60,
+        "split_num_docs_target": 10000000,
+        "merge_policy": {"type": "stable_log"},
+        "resources": {"heap_size": "2 GB"}
+    }`),
+    IngestSettings: json.RawMessage(`{
+        "min_shards": 1,
+        "validate_docs": true
+    }`),
+    SearchSettings: json.RawMessage(`{
+        "default_search_fields": ["title", "body"]
+    }`),
+    Retention: json.RawMessage(`{
+        "period": "90 days",
+        "schedule": "daily"
+    }`),
+})
 
 // Get
 index, err := client.GetIndex("my-index")
