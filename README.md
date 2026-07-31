@@ -27,17 +27,12 @@ go get github.com/akbariandev/quickwit-gosdk
 ```go
 client := quickwitgosdk.NewClient("http://localhost:7280")
 
-// With API key authentication
-client := quickwitgosdk.NewClient("http://localhost:7280",
-    quickwitgosdk.WithAPIKey("your-api-key"),
-)
-
 // With custom timeout
 client := quickwitgosdk.NewClient("http://localhost:7280",
     quickwitgosdk.WithTimeout(30 * time.Second),
 )
 
-// With custom transport (e.g. for custom TLS)
+// With custom transport (e.g. for custom TLS or an auth-injecting reverse proxy)
 client := quickwitgosdk.NewClient("http://localhost:7280",
     quickwitgosdk.WithTransport(customTransport),
 )
