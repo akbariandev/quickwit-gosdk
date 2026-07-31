@@ -11,10 +11,10 @@ import (
 func TestListIndexes(t *testing.T) {
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode([]IndexMetadata{
-			{IndexID: "index-1"},
-			{IndexID: "index-2"},
-		})
+		w.Write([]byte(`[
+			{"version":"0.9","index_uid":"index-1:01ABC","index_config":{"version":"0.9","index_id":"index-1","index_uri":"file:///idx1"}},
+			{"version":"0.9","index_uid":"index-2:01DEF","index_config":{"version":"0.9","index_id":"index-2","index_uri":"file:///idx2"}}
+		]`))
 	}))
 	defer ts.Close()
 
@@ -24,22 +24,27 @@ func TestListIndexes(t *testing.T) {
 		t.Fatalf("unexpected error: %v", err)
 	}
 	if len(indexes) != 2 {
-		t.Errorf("expected 2 indexes, got %d", len(indexes))
+		t.Fatalf("expected 2 indexes, got %d", len(indexes))
 	}
-	if indexes[0].IndexID != "index-1" {
-		t.Errorf("expected index_id 'index-1', got %q", indexes[0].IndexID)
+	if indexes[0].IndexConfig.IndexID != "index-1" {
+		t.Errorf("expected index_id 'index-1', got %q", indexes[0].IndexConfig.IndexID)
+	}
+	if indexes[0].IndexUID != "index-1:01ABC" {
+		t.Errorf("expected index_uid 'index-1:01ABC', got %q", indexes[0].IndexUID)
+	}
+	if indexes[1].IndexConfig.IndexURI != "file:///idx2" {
+		t.Errorf("expected index_uri, got %q", indexes[1].IndexConfig.IndexURI)
 	}
 }
 
 func TestGetIndex(t *testing.T) {
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		// GET /api/v1/indexes/{indexId}
 		if r.URL.Path != "/api/v1/indexes/my-index" {
 			http.Error(w, "not found", http.StatusNotFound)
 			return
 		}
 		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(IndexMetadata{IndexID: "my-index"})
+		w.Write([]byte(`{"version":"0.9","index_uid":"my-index:01XYZ","index_config":{"version":"0.9","index_id":"my-index","index_uri":"file:///myidx"}}`))
 	}))
 	defer ts.Close()
 
@@ -48,15 +53,21 @@ func TestGetIndex(t *testing.T) {
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
-	if index.IndexID != "my-index" {
-		t.Errorf("expected index_id 'my-index', got %q", index.IndexID)
+	if index.IndexConfig.IndexID != "my-index" {
+		t.Errorf("expected index_id 'my-index', got %q", index.IndexConfig.IndexID)
+	}
+	if index.IndexUID != "my-index:01XYZ" {
+		t.Errorf("expected index_uid 'my-index:01XYZ', got %q", index.IndexUID)
 	}
 }
 
 func TestCreateIndex(t *testing.T) {
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// Echo back the request as a proper index metadata response
+		var req CreateIndexRequest
+		json.NewDecoder(r.Body).Decode(&req)
 		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(IndexMetadata{IndexID: "new-index"})
+		w.Write([]byte(`{"version":"0.9","index_uid":"new-index:01NEW","index_config":{"version":"0.9","index_id":"new-index"}}`))
 	}))
 	defer ts.Close()
 
@@ -65,8 +76,8 @@ func TestCreateIndex(t *testing.T) {
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
-	if index.IndexID != "new-index" {
-		t.Errorf("expected index_id 'new-index', got %q", index.IndexID)
+	if index.IndexConfig.IndexID != "new-index" {
+		t.Errorf("expected index_id 'new-index', got %q", index.IndexConfig.IndexID)
 	}
 }
 

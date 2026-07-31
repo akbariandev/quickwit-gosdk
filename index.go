@@ -25,27 +25,38 @@ func (t *Timestamp) UnmarshalJSON(data []byte) error {
 	return json.Unmarshal(data, &t.Time)
 }
 
-// IndexMetadata represents metadata about a Quickwit index.
+// IndexMetadata represents the top-level metadata for a Quickwit index.
 type IndexMetadata struct {
+	Version         string          `json:"version"`
+	IndexUID        string          `json:"index_uid"`
+	IndexConfig     IndexConfig     `json:"index_config"`
+	Checkpoint      json.RawMessage `json:"checkpoint,omitempty"`
+	CreateTimestamp Timestamp       `json:"create_timestamp,omitempty"`
+	Sources         json.RawMessage `json:"sources,omitempty"`
+}
+
+// IndexConfig represents the configuration of a Quickwit index.
+type IndexConfig struct {
+	Version          string          `json:"version"`
 	IndexID          string          `json:"index_id"`
-	URI              string          `json:"index_uri,omitempty"`
-	Version          string          `json:"version,omitempty"`
+	IndexURI         string          `json:"index_uri,omitempty"`
 	DocMapping       json.RawMessage `json:"doc_mapping,omitempty"`
 	IndexingSettings json.RawMessage `json:"indexing_settings,omitempty"`
+	IngestSettings   json.RawMessage `json:"ingest_settings,omitempty"`
 	SearchSettings   json.RawMessage `json:"search_settings,omitempty"`
 	Retention        json.RawMessage `json:"retention,omitempty"`
-	CreateTimestamp  Timestamp       `json:"create_timestamp,omitempty"`
-	Source           json.RawMessage `json:"source,omitempty"`
 }
 
 // CreateIndexRequest is the request body for creating a new index.
 type CreateIndexRequest struct {
+	Version          string          `json:"version,omitempty"`
 	IndexID          string          `json:"index_id"`
+	IndexURI         string          `json:"index_uri,omitempty"`
 	DocMapping       json.RawMessage `json:"doc_mapping,omitempty"`
 	IndexingSettings json.RawMessage `json:"indexing_settings,omitempty"`
+	IngestSettings   json.RawMessage `json:"ingest_settings,omitempty"`
 	SearchSettings   json.RawMessage `json:"search_settings,omitempty"`
 	Retention        json.RawMessage `json:"retention,omitempty"`
-	Source           json.RawMessage `json:"source,omitempty"`
 	Overrides        json.RawMessage `json:"overrides,omitempty"`
 }
 

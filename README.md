@@ -134,6 +134,12 @@ index, err := client.GetIndex("my-index")
 // List all
 indexes, err := client.ListIndexes()
 
+// Access index fields via IndexConfig:
+//   indexes[0].IndexConfig.IndexID   // "my-index"
+//   indexes[0].IndexConfig.IndexURI  // "file:///..."
+//   indexes[0].IndexUID              // "my-index:01XYZ"
+//   indexes[0].CreateTimestamp.Time  // creation time
+
 // Delete (dry run)
 resp, err := client.DeleteIndex("my-index", true)
 
