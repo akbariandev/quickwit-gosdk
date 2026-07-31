@@ -124,36 +124,40 @@ err = client.ForceMerge("my-index")
 index, err := client.CreateIndex(quickwitgosdk.CreateIndexRequest{
     Version: "0.9",
     IndexID: "my-index",
-    DocMapping: json.RawMessage(`{
-        "mode": "lenient",
-        "field_mappings": [
-            {"name": "title",   "type": "text",   "stored": true, "indexed": true},
-            {"name": "body",    "type": "text",   "stored": true, "indexed": true},
-            {"name": "ts",      "type": "datetime","stored": true, "indexed": true, "fast": true}
-        ],
-        "tag_fields": [],
-        "timestamp_field": "ts",
-        "store_source": true
-    }`),
+    DocMapping: quickwitgosdk.DocMapping{
+        Mode: "lenient",
+        FieldMappings: []quickwitgosdk.FieldMapping{
+            {Name: "title", Type: "text", Stored: true, Indexed: true},
+            {Name: "body",  Type: "text", Stored: true, Indexed: true},
+            {Name: "ts",    Type: "datetime", Stored: true, Indexed: true, Fast: &quickwitgosdk.FastField{Enabled: true}},
+        },
+        TagFields:      []string{},
+        TimestampField: "ts",
+        StoreSource:    true,
+    },
     // Optional fields below — omitted when empty:
-    IndexURI: "", // custom index storage URI
-    IndexingSettings: json.RawMessage(`{
-        "commit_timeout_secs": 60,
-        "split_num_docs_target": 10000000,
-        "merge_policy": {"type": "stable_log"},
-        "resources": {"heap_size": "2 GB"}
-    }`),
-    IngestSettings: json.RawMessage(`{
-        "min_shards": 1,
-        "validate_docs": true
-    }`),
-    SearchSettings: json.RawMessage(`{
-        "default_search_fields": ["title", "body"]
-    }`),
-    Retention: json.RawMessage(`{
-        "period": "90 days",
-        "schedule": "daily"
-    }`),
+    IndexingSettings: quickwitgosdk.IndexingSettings{
+        CommitTimeoutSecs:  60,
+        SplitNumDocsTarget: 10000000,
+        MergePolicy: &quickwitgosdk.MergePolicy{
+            Type:        "stable_log",
+            MergeFactor: 10,
+        },
+        Resources: &quickwitgosdk.IndexingResources{
+            HeapSize: json.Number("2000000000"), // or "2 GB"
+        },
+    },
+    IngestSettings: quickwitgosdk.IngestSettings{
+        MinShards:    1,
+        ValidateDocs: true,
+    },
+    SearchSettings: quickwitgosdk.SearchSettings{
+        DefaultSearchFields: []string{"title", "body"},
+    },
+    Retention: &quickwitgosdk.Retention{
+        Period:   "90 days",
+        Schedule: "daily",
+    },
 })
 
 // Get
@@ -162,11 +166,15 @@ index, err := client.GetIndex("my-index")
 // List all
 indexes, err := client.ListIndexes()
 
-// Access index fields via IndexConfig:
-//   indexes[0].IndexConfig.IndexID   // "my-index"
-//   indexes[0].IndexConfig.IndexURI  // "file:///..."
-//   indexes[0].IndexUID              // "my-index:01XYZ"
-//   indexes[0].CreateTimestamp.Time  // creation time
+// Access typed index fields via IndexConfig:
+//   index.IndexConfig.IndexID                    // "my-index"
+//   index.IndexConfig.IndexURI                   // "file:///..."
+//   index.IndexConfig.DocMapping.Mode            // "lenient"
+//   index.IndexConfig.DocMapping.FieldMappings[0].Name  // "title"
+//   index.IndexConfig.SearchSettings.DefaultSearchFields
+//   index.IndexUID                                // "my-index:01XYZ"
+//   index.CreateTimestamp.Time                    // creation time
+//   index.Sources[0].SourceID                     // "_ingest-source"
 
 // Delete (dry run)
 resp, err := client.DeleteIndex("my-index", true)
