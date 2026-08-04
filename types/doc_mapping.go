@@ -1,11 +1,11 @@
-package quickwitgosdk
+package types
 
 import "encoding/json"
 
 // DocMapping defines how documents are mapped to index fields.
 type DocMapping struct {
 	DocMappingUID      string          `json:"doc_mapping_uid,omitempty"`
-	Mode               string          `json:"mode,omitempty"`               // "strict", "lenient", or "dynamic"
+	Mode               string          `json:"mode,omitempty"` // "strict", "lenient", or "dynamic"
 	DynamicMapping     *DynamicMapping `json:"dynamic_mapping,omitempty"`
 	FieldMappings      []FieldMapping  `json:"field_mappings"`
 	TimestampField     string          `json:"timestamp_field,omitempty"`
@@ -20,13 +20,13 @@ type DocMapping struct {
 
 // DynamicMapping defines the mapping applied to fields not explicitly listed in field_mappings.
 type DynamicMapping struct {
-	Description string       `json:"description,omitempty"`
-	ExpandDots  bool         `json:"expand_dots,omitempty"`
-	Fast        *FastField   `json:"fast,omitempty"`
-	Indexed     bool         `json:"indexed,omitempty"`
-	Record      string       `json:"record,omitempty"` // "basic", "freq", or "position"
-	Stored      bool         `json:"stored,omitempty"`
-	Tokenizer   string       `json:"tokenizer,omitempty"`
+	Description string     `json:"description,omitempty"`
+	ExpandDots  bool       `json:"expand_dots,omitempty"`
+	Fast        *FastField `json:"fast,omitempty"`
+	Indexed     bool       `json:"indexed,omitempty"`
+	Record      string     `json:"record,omitempty"` // "basic", "freq", or "position"
+	Stored      bool       `json:"stored,omitempty"`
+	Tokenizer   string     `json:"tokenizer,omitempty"`
 }
 
 // FieldMapping defines a single field in a doc mapping.
@@ -51,9 +51,9 @@ type FieldMapping struct {
 // FastField configures fast field behavior.
 // It can be a bool (disabled/enabled) or an object with a normalizer.
 type FastField struct {
-	Enabled     bool   `json:"-"`
-	Normalizer  string `json:"normalizer,omitempty"`
-	isObj       bool
+	Enabled    bool   `json:"-"`
+	Normalizer string `json:"normalizer,omitempty"`
+	isObj      bool
 }
 
 // MarshalJSON implements custom marshaling for FastField.
@@ -66,7 +66,6 @@ func (f FastField) MarshalJSON() ([]byte, error) {
 		return []byte("false"), nil
 	}
 	// Object form with normalizer
-	type alias FastField
 	return json.Marshal(struct {
 		Normalizer string `json:"normalizer,omitempty"`
 	}{
@@ -100,22 +99,22 @@ func (f *FastField) UnmarshalJSON(data []byte) error {
 
 // Tokenizer defines a custom tokenizer configuration.
 type Tokenizer struct {
-	Name        string   `json:"name"`
-	Type        string   `json:"type"` // "ngram", "regex", "simple", "source_code"
-	Filters     []string `json:"filters,omitempty"`
-	MinGram     int      `json:"min_gram,omitempty"`     // ngram only
-	MaxGram     int      `json:"max_gram,omitempty"`     // ngram only
-	PrefixOnly  bool     `json:"prefix_only,omitempty"`  // ngram only
-	Pattern     string   `json:"pattern,omitempty"`      // regex only
+	Name       string   `json:"name"`
+	Type       string   `json:"type"` // "ngram", "regex", "simple", "source_code"
+	Filters    []string `json:"filters,omitempty"`
+	MinGram    int      `json:"min_gram,omitempty"`    // ngram only
+	MaxGram    int      `json:"max_gram,omitempty"`    // ngram only
+	PrefixOnly bool     `json:"prefix_only,omitempty"` // ngram only
+	Pattern    string   `json:"pattern,omitempty"`     // regex only
 }
 
 // IndexingSettings configures how documents are indexed.
 type IndexingSettings struct {
-	CommitTimeoutSecs        int               `json:"commit_timeout_secs,omitempty"`
-	DocstoreCompressionLevel int               `json:"docstore_compression_level,omitempty"`
-	DocstoreBlocksize        int               `json:"docstore_blocksize,omitempty"`
-	SplitNumDocsTarget       int               `json:"split_num_docs_target,omitempty"`
-	MergePolicy              *MergePolicy      `json:"merge_policy,omitempty"`
+	CommitTimeoutSecs        int                `json:"commit_timeout_secs,omitempty"`
+	DocstoreCompressionLevel int                `json:"docstore_compression_level,omitempty"`
+	DocstoreBlocksize        int                `json:"docstore_blocksize,omitempty"`
+	SplitNumDocsTarget       int                `json:"split_num_docs_target,omitempty"`
+	MergePolicy              *MergePolicy       `json:"merge_policy,omitempty"`
 	Resources                *IndexingResources `json:"resources,omitempty"`
 }
 
@@ -153,10 +152,10 @@ type Retention struct {
 
 // Source represents an ingest source for an index.
 type Source struct {
-	Version     string `json:"version"`
-	SourceID    string `json:"source_id"`
-	NumPipelines int   `json:"num_pipelines"`
-	Enabled     bool   `json:"enabled"`
-	SourceType  string `json:"source_type"`
-	InputFormat string `json:"input_format,omitempty"`
+	Version      string `json:"version"`
+	SourceID     string `json:"source_id"`
+	NumPipelines int    `json:"num_pipelines"`
+	Enabled      bool   `json:"enabled"`
+	SourceType   string `json:"source_type"`
+	InputFormat  string `json:"input_format,omitempty"`
 }

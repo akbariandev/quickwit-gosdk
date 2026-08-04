@@ -1,6 +1,9 @@
-package quickwitgosdk
+package types
 
-import "encoding/json"
+import (
+	"encoding/json"
+	"time"
+)
 
 // OutputFormat represents the format of a search response (json or pretty_json).
 type OutputFormat string
@@ -122,4 +125,25 @@ type Shard struct {
 type SearchError struct {
 	Message string `json:"message"`
 	Kind    string `json:"kind,omitempty"`
+}
+
+// Timestamp is a custom type that can unmarshal from both numeric (Unix seconds)
+// and RFC3339 string timestamps returned by the Quickwit API.
+type Timestamp struct {
+	time.Time
+}
+
+// UnmarshalJSON implements custom unmarshaling for Timestamp.
+func (t *Timestamp) UnmarshalJSON(data []byte) error {
+	// Try numeric first (e.g. 1704067200)
+	var num float64
+	if err := json.Unmarshal(data, &num); err == nil {
+		secs := int64(num)
+		nanos := int64((num - float64(secs)) * 1e9)
+		t.Time = time.Unix(secs, nanos).UTC()
+		return nil
+	}
+
+	// Fall back to RFC3339 string
+	return json.Unmarshal(data, &t.Time)
 }
