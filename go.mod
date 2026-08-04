@@ -1,6 +1,6 @@
 module github.com/akbariandev/quickwit-gosdk
 
-go 1.23.2
+go 1.26.5
 
 require github.com/go-resty/resty/v2 v2.15.3
 
