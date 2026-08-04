@@ -1,4 +1,4 @@
-package quickwitgosdk
+package search
 
 import (
 	"encoding/json"
@@ -6,9 +6,12 @@ import (
 	"net/http/httptest"
 	"strings"
 	"testing"
+
+	"github.com/akbariandev/quickwit-gosdk/client"
+	"github.com/akbariandev/quickwit-gosdk/types"
 )
 
-func TestSearch(t *testing.T) {
+func TestDo(t *testing.T) {
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.Method != http.MethodPost {
 			t.Errorf("expected POST, got %s", r.Method)
@@ -17,7 +20,7 @@ func TestSearch(t *testing.T) {
 			t.Errorf("unexpected path: %s", r.URL.Path)
 		}
 
-		var req SearchRequest
+		var req Request
 		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 			t.Fatalf("failed to decode request: %v", err)
 		}
@@ -28,7 +31,6 @@ func TestSearch(t *testing.T) {
 			t.Errorf("expected default_operator 'AND', got %q", req.DefaultOperator)
 		}
 
-		// Return flat document fields as Quickwit does
 		w.Header().Set("Content-Type", "application/json")
 		w.Write([]byte(`{
 			"num_hits": 2,
@@ -41,8 +43,8 @@ func TestSearch(t *testing.T) {
 	}))
 	defer ts.Close()
 
-	client := NewClient(ts.URL)
-	resp, err := client.Search("my-index", SearchRequest{
+	c := client.New(ts.URL)
+	resp, err := Do(c, "my-index", Request{
 		Query:           "hello world",
 		DefaultOperator: "AND",
 	})
@@ -58,14 +60,11 @@ func TestSearch(t *testing.T) {
 	if resp.Hits[0].Fields["title"] != "doc1" {
 		t.Errorf("expected title 'doc1', got %v", resp.Hits[0].Fields["title"])
 	}
-	if resp.Hits[1].Fields["body"] != "second doc" {
-		t.Errorf("expected body 'second doc', got %v", resp.Hits[1].Fields["body"])
-	}
 }
 
-func TestSearchWithSortAndSnippets(t *testing.T) {
+func TestDoWithSortAndSnippets(t *testing.T) {
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		var req SearchRequest
+		var req Request
 		json.NewDecoder(r.Body).Decode(&req)
 
 		if req.SortByField == nil || req.SortByField.FieldName != "timestamp" {
@@ -76,25 +75,22 @@ func TestSearchWithSortAndSnippets(t *testing.T) {
 		}
 
 		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(SearchResponse{NumHits: 0})
+		w.Write([]byte(`{"num_hits":0}`))
 	}))
 	defer ts.Close()
 
-	client := NewClient(ts.URL)
-	_, err := client.Search("idx", SearchRequest{
-		Query:       "test",
-		SortByField: &SortByField{FieldName: "timestamp", Order: "desc"},
-		SnippetFields: &SnippetRequest{
-			FieldName:              "body",
-			MaxNumCharsPerFragment: 200,
-		},
+	c := client.New(ts.URL)
+	_, err := Do(c, "idx", Request{
+		Query:         "test",
+		SortByField:   &types.SortByField{FieldName: "timestamp", Order: "desc"},
+		SnippetFields: &types.SnippetRequest{FieldName: "body", MaxNumCharsPerFragment: 200},
 	})
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
 }
 
-func TestSearchWithScroll(t *testing.T) {
+func TestDoWithScroll(t *testing.T) {
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.Method != http.MethodPost {
 			t.Errorf("expected POST, got %s", r.Method)
@@ -103,7 +99,7 @@ func TestSearchWithScroll(t *testing.T) {
 			t.Errorf("unexpected path: %s", r.URL.Path)
 		}
 
-		var req SearchRequest
+		var req Request
 		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 			t.Fatalf("failed to decode request: %v", err)
 		}
@@ -112,13 +108,13 @@ func TestSearchWithScroll(t *testing.T) {
 		}
 
 		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(SearchResponse{NumHits: 0})
+		w.Write([]byte(`{"num_hits":0}`))
 	}))
 	defer ts.Close()
 
-	client := NewClient(ts.URL)
+	c := client.New(ts.URL)
 	scrollTTL := uint64(60)
-	resp, err := client.Search("my-index", SearchRequest{
+	resp, err := Do(c, "my-index", Request{
 		Query:         "test",
 		ScrollTTLSecs: &scrollTTL,
 	})

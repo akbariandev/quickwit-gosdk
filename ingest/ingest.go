@@ -1,34 +1,37 @@
-package quickwitgosdk
+// Package ingest provides the Quickwit document ingestion API.
+package ingest
 
 import (
 	"bytes"
 	"encoding/json"
 	"io"
+
+	"github.com/akbariandev/quickwit-gosdk/client"
 )
 
-// IngestResponse is the response returned after ingesting documents.
-type IngestResponse struct {
-	NumPersisted uint64             `json:"num_persisted"`
-	NumFailed    uint64             `json:"num_failed,omitempty"`
-	Errors       []IngestBatchError `json:"errors,omitempty"`
+// Response is the response returned after ingesting documents.
+type Response struct {
+	NumPersisted uint64       `json:"num_persisted"`
+	NumFailed    uint64       `json:"num_failed,omitempty"`
+	Errors       []BatchError `json:"errors,omitempty"`
 }
 
-// IngestBatchError represents an error for a single document in a batch.
-type IngestBatchError struct {
+// BatchError represents an error for a single document in a batch.
+type BatchError struct {
 	DocJSON interface{} `json:"doc_json,omitempty"`
 	Error   string      `json:"error,omitempty"`
 }
 
-// Ingest sends a batch of documents to the given index as NDJSON.
-func (c *Client) Ingest(indexId string, docs []interface{}) (IngestResponse, error) {
-	var resp IngestResponse
+// Send sends a batch of documents to the given index as NDJSON.
+func Send(c *client.Client, indexId string, docs []interface{}) (Response, error) {
+	var resp Response
 
 	ndjson, err := marshalNDJSON(docs)
 	if err != nil {
 		return resp, err
 	}
 
-	_, err = c.client.R().
+	_, err = c.HTTP.R().
 		SetPathParam("indexId", indexId).
 		SetHeader("Content-Type", "application/x-ndjson").
 		SetBody(ndjson).
@@ -38,12 +41,12 @@ func (c *Client) Ingest(indexId string, docs []interface{}) (IngestResponse, err
 	return resp, err
 }
 
-// IngestFromReader sends documents from an io.Reader to the given index.
+// SendFromReader sends documents from an io.Reader to the given index.
 // The reader should provide NDJSON-formatted data.
-func (c *Client) IngestFromReader(indexId string, reader io.Reader) (IngestResponse, error) {
-	var resp IngestResponse
+func SendFromReader(c *client.Client, indexId string, reader io.Reader) (Response, error) {
+	var resp Response
 
-	_, err := c.client.R().
+	_, err := c.HTTP.R().
 		SetPathParam("indexId", indexId).
 		SetHeader("Content-Type", "application/x-ndjson").
 		SetBody(reader).
@@ -54,8 +57,8 @@ func (c *Client) IngestFromReader(indexId string, reader io.Reader) (IngestRespo
 }
 
 // ForceMerge triggers a force-merge operation on the given index.
-func (c *Client) ForceMerge(indexId string) error {
-	_, err := c.client.R().
+func ForceMerge(c *client.Client, indexId string) error {
+	_, err := c.HTTP.R().
 		SetPathParam("indexId", indexId).
 		Post("/api/v1/indexes/{indexId}/force-merge")
 

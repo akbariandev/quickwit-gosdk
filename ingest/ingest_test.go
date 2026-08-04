@@ -1,4 +1,4 @@
-package quickwitgosdk
+package ingest
 
 import (
 	"encoding/json"
@@ -6,9 +6,11 @@ import (
 	"net/http/httptest"
 	"strings"
 	"testing"
+
+	"github.com/akbariandev/quickwit-gosdk/client"
 )
 
-func TestIngest(t *testing.T) {
+func TestSend(t *testing.T) {
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.Method != http.MethodPost {
 			t.Errorf("expected POST, got %s", r.Method)
@@ -35,12 +37,12 @@ func TestIngest(t *testing.T) {
 		}
 
 		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(IngestResponse{NumPersisted: 2})
+		w.Write([]byte(`{"num_persisted":2}`))
 	}))
 	defer ts.Close()
 
-	client := NewClient(ts.URL)
-	resp, err := client.Ingest("my-index", []interface{}{
+	c := client.New(ts.URL)
+	resp, err := Send(c, "my-index", []interface{}{
 		map[string]string{"title": "doc1"},
 		map[string]string{"title": "doc2"},
 	})
@@ -52,18 +54,18 @@ func TestIngest(t *testing.T) {
 	}
 }
 
-func TestIngestFromReader(t *testing.T) {
+func TestSendFromReader(t *testing.T) {
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(IngestResponse{NumPersisted: 1, NumFailed: 0})
+		w.Write([]byte(`{"num_persisted":1}`))
 	}))
 	defer ts.Close()
 
-	client := NewClient(ts.URL)
+	c := client.New(ts.URL)
 	ndjson := `{"title":"doc1"}
 {"title":"doc2"}
 `
-	resp, err := client.IngestFromReader("my-index", strings.NewReader(ndjson))
+	resp, err := SendFromReader(c, "my-index", strings.NewReader(ndjson))
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}

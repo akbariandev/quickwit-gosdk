@@ -1,9 +1,14 @@
-package quickwitgosdk
+// Package delete provides the Quickwit delete-by-query task API.
+package delete
 
-import "time"
+import (
+	"time"
 
-// DeleteQueryRequest is the request body for submitting a delete-by-query task.
-type DeleteQueryRequest struct {
+	"github.com/akbariandev/quickwit-gosdk/client"
+)
+
+// Request is the request body for submitting a delete-by-query task.
+type Request struct {
 	Query          string   `json:"query"`
 	SearchFields   []string `json:"search_field,omitempty"`
 	StartTimestamp *int64   `json:"start_timestamp,omitempty"`
@@ -12,13 +17,13 @@ type DeleteQueryRequest struct {
 	Filter         string   `json:"filter,omitempty"`
 }
 
-// DeleteQueryResponse is the response returned after submitting a delete-by-query task.
-type DeleteQueryResponse struct {
+// Response is the response returned after submitting a delete-by-query task.
+type Response struct {
 	TaskID string `json:"task_id"`
 }
 
-// DeleteTaskResponse is the response returned when querying the status of a delete task.
-type DeleteTaskResponse struct {
+// TaskResponse is the response returned when querying the status of a delete task.
+type TaskResponse struct {
 	TaskID    string    `json:"task_id"`
 	Status    string    `json:"status"` // "running", "success", "error", "cancelled"
 	CreatedAt time.Time `json:"created_at"`
@@ -26,10 +31,10 @@ type DeleteTaskResponse struct {
 	Error     string    `json:"error,omitempty"`
 }
 
-// DeleteByQuery submits a delete-by-query task for the given index.
-func (c *Client) DeleteByQuery(indexId string, req DeleteQueryRequest) (DeleteQueryResponse, error) {
-	var resp DeleteQueryResponse
-	_, err := c.client.R().
+// Submit submits a delete-by-query task for the given index.
+func Submit(c *client.Client, indexId string, req Request) (Response, error) {
+	var resp Response
+	_, err := c.HTTP.R().
 		SetPathParam("indexId", indexId).
 		SetBody(req).
 		SetResult(&resp).
@@ -38,10 +43,10 @@ func (c *Client) DeleteByQuery(indexId string, req DeleteQueryRequest) (DeleteQu
 	return resp, err
 }
 
-// GetDeleteTask returns the status of a delete task.
-func (c *Client) GetDeleteTask(indexId string, taskId string) (DeleteTaskResponse, error) {
-	var resp DeleteTaskResponse
-	_, err := c.client.R().
+// GetTask returns the status of a delete task.
+func GetTask(c *client.Client, indexId string, taskId string) (TaskResponse, error) {
+	var resp TaskResponse
+	_, err := c.HTTP.R().
 		SetPathParam("indexId", indexId).
 		SetPathParam("taskId", taskId).
 		SetResult(&resp).
