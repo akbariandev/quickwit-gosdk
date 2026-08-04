@@ -10,28 +10,17 @@ go get github.com/akbariandev/quickwit-gosdk
 
 ## Features
 
-- [x] Search (with scroll support)
-- [x] Delete Query
-- [x] Index CRUD operations
-- [x] Ingest API
-- [x] Delete Tasks API
+| Feature | Status | Documentation |
+|---------|--------|---------------|
+| Client setup (timeout, transport) | ✅ | [Creating a Client](#creating-a-client) |
+| Index CRUD | ✅ | [Index CRUD](#index-crud) |
+| Ingest | ✅ | [Ingest](#ingest) |
+| Search | ✅ | [Search](#search) |
+| Scroll search | ✅ | [Scroll Search](#scroll-search) |
+| Result pagination | ✅ | [Paginating Large Result Sets](#paginating-large-result-sets) |
+| Delete by query | ✅ | [Delete by Query](#delete-by-query) |
+| Error handling | ✅ | [Error Handling](#error-handling) |
 
-> **Note:** Quickwit removed the `/search/stream` and `/search/scroll` endpoints
-> in v0.9 (PR #5886). Scroll is now a field (`scroll_ttl_secs`) on the regular
-> search request. For large result sets, paginate using `start_offset`/`max_hits`.
-
-## Package Structure
-
-```
-quickwit-gosdk/
-├── client/           # HTTP client + options
-├── types/            # Shared data types (doc mapping, hits, errors)
-├── internal/httputil # Shared HTTP utilities (error hook, helpers)
-├── search/           # Search API
-├── index/            # Index management API
-├── ingest/           # Document ingestion API
-└── delete/           # Delete-by-query task API
-```
 
 ## Usage
 
@@ -54,91 +43,6 @@ c := client.New("http://localhost:7280",
 )
 ```
 
-### Search
-
-```go
-import (
-    "github.com/akbariandev/quickwit-gosdk/search"
-    "github.com/akbariandev/quickwit-gosdk/types"
-)
-
-resp, err := search.Do(c, "my-index", search.Request{
-    Query:           "events:error",
-    DefaultOperator: "AND",
-    MaxHits:         10,
-    SearchFields:    []string{"message", "title"},
-    SortByField:     &types.SortByField{FieldName: "timestamp", Order: "desc"},
-    SnippetFields:   &types.SnippetRequest{FieldName: "message", MaxNumCharsPerFragment: 200},
-    TagFilters:      []string{"tag1:value1", "tag2:value2"},
-    Filter:          "status_code >= 400",
-    Format:          types.FormatPrettyJSON,
-})
-
-fmt.Printf("Found %d hits\n", resp.NumHits)
-for _, hit := range resp.Hits {
-    fmt.Printf("  %v\n", hit.Fields)
-}
-```
-
-### Scroll Search
-
-Scroll is enabled by setting `ScrollTTLSecs` on a regular search request:
-
-```go
-scrollTTL := uint64(60) // seconds
-resp, err := search.Do(c, "my-index", search.Request{
-    Query:         "all logs",
-    MaxHits:       1000,
-    ScrollTTLSecs: &scrollTTL,
-})
-```
-
-### Paginating Large Result Sets
-
-Since the stream endpoint was removed, paginate using `start_offset`/`max_hits`:
-
-```go
-const pageSize = 100
-offset := uint64(0)
-for {
-    resp, err := search.Do(c, "my-index", search.Request{
-        Query:       "body:error",
-        MaxHits:     pageSize,
-        StartOffset: offset,
-    })
-    if err != nil {
-        log.Fatal(err)
-    }
-    for _, hit := range resp.Hits {
-        fmt.Printf("  %v\n", hit.Fields)
-    }
-    if len(resp.Hits) < pageSize {
-        break // no more results
-    }
-    offset += pageSize
-}
-```
-
-### Ingest
-
-```go
-import "github.com/akbariandev/quickwit-gosdk/ingest"
-
-// Send a batch of documents
-resp, err := ingest.Send(c, "my-index", []interface{}{
-    map[string]interface{}{"title": "doc1", "body": "hello world"},
-    map[string]interface{}{"title": "doc2", "body": "quickwit sdk"},
-})
-fmt.Printf("Persisted: %d, Failed: %d\n", resp.NumPersisted, resp.NumFailed)
-
-// Send from a reader (NDJSON)
-reader := strings.NewReader(`{"title":"doc1"}
-{"title":"doc2"}`)
-resp, err := ingest.SendFromReader(c, "my-index", reader)
-
-// Force merge
-err = ingest.ForceMerge(c, "my-index")
-```
 
 ### Index CRUD
 
@@ -215,6 +119,94 @@ splits, err = index.Delete(c, "my-index", false)
 // Clear (remove all data, keep index)
 err = index.Clear(c, "my-index")
 ```
+
+### Ingest
+
+```go
+import "github.com/akbariandev/quickwit-gosdk/ingest"
+
+// Send a batch of documents
+resp, err := ingest.Send(c, "my-index", []interface{}{
+    map[string]interface{}{"title": "doc1", "body": "hello world"},
+    map[string]interface{}{"title": "doc2", "body": "quickwit sdk"},
+})
+fmt.Printf("Persisted: %d, Failed: %d\n", resp.NumPersisted, resp.NumFailed)
+
+// Send from a reader (NDJSON)
+reader := strings.NewReader(`{"title":"doc1"}
+{"title":"doc2"}`)
+resp, err := ingest.SendFromReader(c, "my-index", reader)
+
+// Force merge
+err = ingest.ForceMerge(c, "my-index")
+```
+
+
+### Search
+
+```go
+import (
+    "github.com/akbariandev/quickwit-gosdk/search"
+    "github.com/akbariandev/quickwit-gosdk/types"
+)
+
+resp, err := search.Do(c, "my-index", search.Request{
+    Query:           "events:error",
+    DefaultOperator: "AND",
+    MaxHits:         10,
+    SearchFields:    []string{"message", "title"},
+    SortByField:     &types.SortByField{FieldName: "timestamp", Order: "desc"},
+    SnippetFields:   &types.SnippetRequest{FieldName: "message", MaxNumCharsPerFragment: 200},
+    TagFilters:      []string{"tag1:value1", "tag2:value2"},
+    Filter:          "status_code >= 400",
+    Format:          types.FormatPrettyJSON,
+})
+
+fmt.Printf("Found %d hits\n", resp.NumHits)
+for _, hit := range resp.Hits {
+    fmt.Printf("  %v\n", hit.Fields)
+}
+```
+
+### Scroll Search
+
+Scroll is enabled by setting `ScrollTTLSecs` on a regular search request:
+
+```go
+scrollTTL := uint64(60) // seconds
+resp, err := search.Do(c, "my-index", search.Request{
+    Query:         "all logs",
+    MaxHits:       1000,
+    ScrollTTLSecs: &scrollTTL,
+})
+```
+
+### Paginating Large Result Sets
+
+Since the stream endpoint was removed, paginate using `start_offset`/`max_hits`:
+
+```go
+const pageSize = 100
+offset := uint64(0)
+for {
+    resp, err := search.Do(c, "my-index", search.Request{
+        Query:       "body:error",
+        MaxHits:     pageSize,
+        StartOffset: offset,
+    })
+    if err != nil {
+        log.Fatal(err)
+    }
+    for _, hit := range resp.Hits {
+        fmt.Printf("  %v\n", hit.Fields)
+    }
+    if len(resp.Hits) < pageSize {
+        break // no more results
+    }
+    offset += pageSize
+}
+```
+
 
 ### Delete by Query
 
